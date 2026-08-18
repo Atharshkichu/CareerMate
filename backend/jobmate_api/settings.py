@@ -204,8 +204,8 @@ DEFAULT_AUTO_FIELD = (
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
+    "https://careermate-frontend.onrender.com",
 ]
-
 
 # --------------------------------------------------
 # REST FRAMEWORK + JWT
