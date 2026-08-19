@@ -1,4 +1,7 @@
-import { useState } from "react";
+import {
+  useEffect,
+  useState,
+} from "react";
 
 import Login from "./Login";
 import Signup from "./Signup";
@@ -17,7 +20,14 @@ function App() {
   // INITIAL PAGE
   // =========================================
 
-  const [page, setPage] = useState(() => {
+  const getInitialPage = () => {
+    const savedPage =
+      window.history.state?.page;
+
+    if (savedPage) {
+      return savedPage;
+    }
+
     const loggedIn =
       localStorage.getItem("jobmateUser");
 
@@ -34,7 +44,71 @@ function App() {
     }
 
     return "dashboard";
-  });
+  };
+
+  const [page, setPage] =
+    useState(getInitialPage);
+
+
+  // =========================================
+  // NAVIGATION
+  // =========================================
+
+  const navigate = (nextPage) => {
+    window.history.pushState(
+      {
+        page: nextPage,
+      },
+      "",
+      `#${nextPage}`
+    );
+
+    setPage(nextPage);
+  };
+
+
+  // =========================================
+  // BROWSER BACK / FORWARD
+  // =========================================
+
+  useEffect(() => {
+    const handlePopState = (event) => {
+      const previousPage =
+        event.state?.page;
+
+      if (previousPage) {
+        setPage(previousPage);
+        return;
+      }
+
+      // If no history state exists
+      // go to home
+      setPage("home");
+    };
+
+    window.addEventListener(
+      "popstate",
+      handlePopState
+    );
+
+    // Add initial browser history state
+    if (!window.history.state?.page) {
+      window.history.replaceState(
+        {
+          page,
+        },
+        "",
+        `#${page}`
+      );
+    }
+
+    return () => {
+      window.removeEventListener(
+        "popstate",
+        handlePopState
+      );
+    };
+  }, [page]);
 
 
   // =========================================
@@ -55,9 +129,7 @@ function App() {
   if (page === "dashboard") {
     return (
       <Dashboard
-        onNavigate={(nextPage) =>
-          setPage(nextPage)
-        }
+        onNavigate={navigate}
 
         onLogout={() => {
           localStorage.removeItem(
@@ -84,7 +156,7 @@ function App() {
             "jobmateIsAdmin"
           );
 
-          setPage("home");
+          navigate("home");
         }}
       />
     );
@@ -99,7 +171,7 @@ function App() {
     return (
       <InterviewPrep
         onBack={() =>
-          setPage("home")
+          navigate("home")
         }
       />
     );
@@ -114,7 +186,7 @@ function App() {
     return (
       <SkillRoadmap
         onBack={() =>
-          setPage("home")
+          navigate("home")
         }
       />
     );
@@ -151,7 +223,7 @@ function App() {
     return (
       <Profile
         onComplete={() =>
-          setPage("dashboard")
+          navigate("dashboard")
         }
       />
     );
@@ -165,8 +237,9 @@ function App() {
   if (page === "login") {
     return (
       <Login
+
         onSignup={() =>
-          setPage("signup")
+          navigate("signup")
         }
 
         onLogin={() => {
@@ -176,11 +249,11 @@ function App() {
             ) === "true";
 
           if (isAdmin) {
-            setPage(
+            navigate(
               "admin-dashboard"
             );
           } else {
-            setPage(
+            navigate(
               "dashboard"
             );
           }
@@ -197,12 +270,13 @@ function App() {
   if (page === "signup") {
     return (
       <Signup
+
         onBackToLogin={() =>
-          setPage("login")
+          navigate("login")
         }
 
         onProfile={() =>
-          setPage("profile")
+          navigate("profile")
         }
       />
     );
@@ -217,7 +291,7 @@ function App() {
     <div className="app">
 
       {/* =====================================
-          NAVBAR
+          NAVIGATION BAR
       ====================================== */}
 
       <nav className="navbar">
@@ -230,50 +304,55 @@ function App() {
         <div className="nav-links">
 
           <a
-            href="#"
-            onClick={() =>
-              setPage("home")
-            }
+            href="#home"
+            onClick={(e) => {
+              e.preventDefault();
+              navigate("home");
+            }}
           >
             Home
           </a>
 
 
           <a
-            href="#"
-            onClick={() =>
-              setPage("jobs")
-            }
+            href="#jobs"
+            onClick={(e) => {
+              e.preventDefault();
+              navigate("jobs");
+            }}
           >
             Find Jobs
           </a>
 
 
           <a
-            href="#"
-            onClick={() =>
-              setPage("roadmap")
-            }
+            href="#roadmap"
+            onClick={(e) => {
+              e.preventDefault();
+              navigate("roadmap");
+            }}
           >
             Skill Roadmap
           </a>
 
 
           <a
-            href="#"
-            onClick={() =>
-              setPage("interview")
-            }
+            href="#interview"
+            onClick={(e) => {
+              e.preventDefault();
+              navigate("interview");
+            }}
           >
             Interview Prep
           </a>
 
 
           <a
-            href="#"
-            onClick={() =>
-              setPage("applications")
-            }
+            href="#applications"
+            onClick={(e) => {
+              e.preventDefault();
+              navigate("applications");
+            }}
           >
             My Applications
           </a>
@@ -284,7 +363,7 @@ function App() {
         <button
           className="login-btn"
           onClick={() =>
-            setPage("login")
+            navigate("login")
           }
         >
           Login
@@ -294,7 +373,7 @@ function App() {
 
 
       {/* =====================================
-          HERO
+          HERO SECTION
       ====================================== */}
 
       <main className="hero">
@@ -314,9 +393,10 @@ function App() {
 
 
           <p className="description">
-            CareerMate helps you find jobs that
-            match your skills, discover what you
-            need to learn, and prepare for interviews.
+            CareerMate helps you find jobs
+            that match your skills, discover
+            what you need to learn, and
+            prepare for interviews.
           </p>
 
 
@@ -325,7 +405,7 @@ function App() {
             <button
               className="primary-btn"
               onClick={() =>
-                setPage("jobs")
+                navigate("jobs")
               }
             >
               Find Jobs
@@ -335,7 +415,7 @@ function App() {
             <button
               className="secondary-btn"
               onClick={() =>
-                setPage("signup")
+                navigate("signup")
               }
             >
               Create Profile
@@ -356,10 +436,11 @@ function App() {
 
 
         {/* Find Jobs */}
+
         <div
           className="feature-card"
           onClick={() =>
-            setPage("jobs")
+            navigate("jobs")
           }
         >
 
@@ -376,10 +457,11 @@ function App() {
 
 
         {/* Skill Roadmap */}
+
         <div
           className="feature-card"
           onClick={() =>
-            setPage("roadmap")
+            navigate("roadmap")
           }
         >
 
@@ -388,18 +470,19 @@ function App() {
           </h3>
 
           <p>
-            Know exactly what skills you need
-            for your dream job.
+            Know exactly what skills you
+            need for your dream job.
           </p>
 
         </div>
 
 
         {/* Interview Prep */}
+
         <div
           className="feature-card"
           onClick={() =>
-            setPage("interview")
+            navigate("interview")
           }
         >
 
