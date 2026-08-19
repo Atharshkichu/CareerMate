@@ -23,9 +23,9 @@ from .serializers import (
 import os
 
 
-# --------------------------------------------------
+# ==================================================
 # GET ALL JOBS
-# --------------------------------------------------
+# ==================================================
 
 @api_view(["GET"])
 def jobs_list(request):
@@ -39,10 +39,10 @@ def jobs_list(request):
     return Response(serializer.data)
 
 
-# --------------------------------------------------
+# ==================================================
 # CREATE / UPDATE PROFILE
 # JWT PROTECTED
-# --------------------------------------------------
+# ==================================================
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
@@ -96,9 +96,9 @@ def create_profile(request):
     )
 
 
-# --------------------------------------------------
+# ==================================================
 # SIGN UP
-# --------------------------------------------------
+# ==================================================
 
 @api_view(["POST"])
 def signup(request):
@@ -125,9 +125,9 @@ def signup(request):
     )
 
 
-# --------------------------------------------------
+# ==================================================
 # LOGIN
-# --------------------------------------------------
+# ==================================================
 
 @api_view(["POST"])
 def login_user(request):
@@ -173,22 +173,18 @@ def login_user(request):
     )
 
 
-# --------------------------------------------------
+# ==================================================
 # USER APPLICATIONS
 # GET  -> Logged-in user's applications
 # POST -> Create application
 # JWT PROTECTED
-# --------------------------------------------------
+# ==================================================
 
 @api_view(["GET", "POST"])
 @permission_classes([IsAuthenticated])
 def applications(request):
 
     user = request.user
-
-    # ----------------------------------------------
-    # Find logged-in user's profile
-    # ----------------------------------------------
 
     try:
         profile = Profile.objects.get(
@@ -204,9 +200,9 @@ def applications(request):
             status=404,
         )
 
-    # ----------------------------------------------
+    # ------------------------------------------------
     # GET APPLICATIONS
-    # ----------------------------------------------
+    # ------------------------------------------------
 
     if request.method == "GET":
 
@@ -250,9 +246,9 @@ def applications(request):
 
         return Response(data)
 
-    # ----------------------------------------------
+    # ------------------------------------------------
     # POST APPLICATION
-    # ----------------------------------------------
+    # ------------------------------------------------
 
     job_id = request.data.get(
         "job_id"
@@ -302,10 +298,10 @@ def applications(request):
     )
 
 
-# --------------------------------------------------
+# ==================================================
 # USER UPDATE APPLICATION STATUS
 # JWT PROTECTED
-# --------------------------------------------------
+# ==================================================
 
 @api_view(["PATCH"])
 @permission_classes([IsAuthenticated])
@@ -384,10 +380,10 @@ def update_application_status(
     )
 
 
-# --------------------------------------------------
+# ==================================================
 # GET MY PROFILE
 # JWT PROTECTED
-# --------------------------------------------------
+# ==================================================
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
@@ -418,10 +414,10 @@ def my_profile(request):
     )
 
 
-# --------------------------------------------------
+# ==================================================
 # ADMIN DASHBOARD
 # ADMIN / STAFF ONLY
-# --------------------------------------------------
+# ==================================================
 
 @api_view(["GET"])
 @permission_classes([IsAdminUser])
@@ -470,20 +466,20 @@ def admin_dashboard(request):
     )
 
 
-# --------------------------------------------------
+# ==================================================
 # ADMIN JOB MANAGEMENT
 # GET  -> All jobs
 # POST -> Create job
 # ADMIN / STAFF ONLY
-# --------------------------------------------------
+# ==================================================
 
 @api_view(["GET", "POST"])
 @permission_classes([IsAdminUser])
 def admin_jobs(request):
 
-    # ----------------------------------------------
+    # ------------------------------------------------
     # GET ALL JOBS
-    # ----------------------------------------------
+    # ------------------------------------------------
 
     if request.method == "GET":
 
@@ -500,9 +496,9 @@ def admin_jobs(request):
             serializer.data
         )
 
-    # ----------------------------------------------
+    # ------------------------------------------------
     # CREATE JOB
-    # ----------------------------------------------
+    # ------------------------------------------------
 
     title = request.data.get(
         "title"
@@ -559,12 +555,12 @@ def admin_jobs(request):
     )
 
 
-# --------------------------------------------------
+# ==================================================
 # ADMIN JOB DETAIL
 # PUT    -> Update job
 # DELETE -> Delete job
 # ADMIN / STAFF ONLY
-# --------------------------------------------------
+# ==================================================
 
 @api_view(["PUT", "DELETE"])
 @permission_classes([IsAdminUser])
@@ -587,9 +583,9 @@ def admin_job_detail(
             status=404,
         )
 
-    # ----------------------------------------------
+    # ------------------------------------------------
     # UPDATE JOB
-    # ----------------------------------------------
+    # ------------------------------------------------
 
     if request.method == "PUT":
 
@@ -628,9 +624,9 @@ def admin_job_detail(
             serializer.data
         )
 
-    # ----------------------------------------------
+    # ------------------------------------------------
     # DELETE JOB
-    # ----------------------------------------------
+    # ------------------------------------------------
 
     job.delete()
 
@@ -642,11 +638,11 @@ def admin_job_detail(
     )
 
 
-# --------------------------------------------------
+# ==================================================
 # ADMIN APPLICATIONS
 # GET -> All users' applications
 # ADMIN / STAFF ONLY
-# --------------------------------------------------
+# ==================================================
 
 @api_view(["GET"])
 @permission_classes([IsAdminUser])
@@ -696,10 +692,10 @@ def admin_applications(request):
     return Response(data)
 
 
-# --------------------------------------------------
+# ==================================================
 # ADMIN UPDATE APPLICATION STATUS
 # ADMIN / STAFF ONLY
-# --------------------------------------------------
+# ==================================================
 
 @api_view(["PATCH"])
 @permission_classes([IsAdminUser])
@@ -763,11 +759,11 @@ def admin_update_application_status(
     )
 
 
-# --------------------------------------------------
+# ==================================================
 # TEMPORARY ADMIN SETUP
 # CREATE ADMIN ONLY ONCE
-# REMOVE THIS AFTER USE
-# --------------------------------------------------
+# REMOVE AFTER USE
+# ==================================================
 
 @api_view(["POST"])
 def setup_admin(request):
@@ -847,4 +843,90 @@ def setup_admin(request):
                 user.username,
         },
         status=201,
+    )
+
+
+# ==================================================
+# TEMPORARY ADMIN PASSWORD RESET
+# REMOVE AFTER USE
+# ==================================================
+
+@api_view(["POST"])
+def reset_admin_password(request):
+
+    setup_key = request.data.get(
+        "setup_key"
+    )
+
+    correct_key = os.environ.get(
+        "ADMIN_SETUP_KEY"
+    )
+
+    if not correct_key:
+        return Response(
+            {
+                "error":
+                    "ADMIN_SETUP_KEY is not configured."
+            },
+            status=500,
+        )
+
+    if setup_key != correct_key:
+        return Response(
+            {
+                "error":
+                    "Invalid setup key."
+            },
+            status=403,
+        )
+
+    username = request.data.get(
+        "username"
+    )
+
+    new_password = request.data.get(
+        "new_password"
+    )
+
+    if not username or not new_password:
+        return Response(
+            {
+                "error":
+                    "Username and new_password are required."
+            },
+            status=400,
+        )
+
+    try:
+        user = User.objects.get(
+            username=username
+        )
+
+    except User.DoesNotExist:
+        return Response(
+            {
+                "error":
+                    "User not found."
+            },
+            status=404,
+        )
+
+    user.set_password(
+        new_password
+    )
+
+    user.is_staff = True
+    user.is_superuser = True
+
+    user.save()
+
+    return Response(
+        {
+            "message":
+                "Admin password reset successfully.",
+
+            "username":
+                user.username,
+        },
+        status=200,
     )
