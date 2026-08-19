@@ -2,14 +2,26 @@ import { useEffect, useState } from "react";
 import { apiFetch } from "./api";
 
 function AdminDashboard() {
-  const [stats, setStats] = useState(null);
+  const [stats, setStats] = useState({
+    total_users: 0,
+    total_jobs: 0,
+    total_applications: 0,
+    selected: 0,
+    rejected: 0,
+    interview: 0,
+  });
+
   const [jobs, setJobs] = useState([]);
   const [applications, setApplications] = useState([]);
 
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [jobLoading, setJobLoading] = useState(false);
+  const [applicationLoading, setApplicationLoading] =
+    useState(false);
 
-  const [form, setForm] = useState({
+  const [message, setMessage] = useState("");
+
+  const [jobForm, setJobForm] = useState({
     title: "",
     company: "",
     location: "",
@@ -17,71 +29,68 @@ function AdminDashboard() {
     skills: "",
   });
 
-  const [editingJobId, setEditingJobId] = useState(null);
-  const [saving, setSaving] = useState(false);
+  // ==================================================
+  // FETCH ADMIN DASHBOARD DATA
+  // ==================================================
 
-  const [updatingApplicationId, setUpdatingApplicationId] =
-    useState(null);
-
-  // ---------------------------------------------
-  // Load admin data
-  // ---------------------------------------------
-
-  const loadData = async () => {
+  const fetchDashboardData = async () => {
     try {
+      setLoading(true);
+
       const statsResponse = await apiFetch(
         "/api/admin/dashboard/"
       );
 
       const statsData = await statsResponse.json();
 
-      if (!statsResponse.ok) {
-        throw new Error(
-          statsData.detail ||
-            statsData.error ||
-            "Unable to load dashboard."
+      if (statsResponse.ok) {
+        setStats(statsData);
+      } else {
+        console.error(
+          "Stats error:",
+          statsData
         );
       }
 
-      setStats(statsData);
-
+      // Fetch all jobs
       const jobsResponse = await apiFetch(
         "/api/admin/jobs/"
       );
 
       const jobsData = await jobsResponse.json();
 
-      if (!jobsResponse.ok) {
-        throw new Error(
-          jobsData.detail ||
-            jobsData.error ||
-            "Unable to load jobs."
+      if (jobsResponse.ok) {
+        setJobs(jobsData);
+      } else {
+        console.error(
+          "Jobs error:",
+          jobsData
         );
       }
 
-      setJobs(jobsData);
-
-      const applicationsResponse = await apiFetch(
-        "/api/admin/applications/"
-      );
+      // Fetch all applications
+      const applicationsResponse =
+        await apiFetch(
+          "/api/admin/applications/"
+        );
 
       const applicationsData =
         await applicationsResponse.json();
 
-      if (!applicationsResponse.ok) {
-        throw new Error(
-          applicationsData.detail ||
-            applicationsData.error ||
-            "Unable to load applications."
+      if (applicationsResponse.ok) {
+        setApplications(
+          applicationsData
+        );
+      } else {
+        console.error(
+          "Applications error:",
+          applicationsData
         );
       }
-
-      setApplications(applicationsData);
     } catch (error) {
-      console.error(error);
-
-      setError(
-        "Unable to load admin data."
+      console.error(
+        "Admin dashboard error:",
+        error
       );
     } finally {
       setLoading(false);
@@ -89,121 +98,105 @@ function AdminDashboard() {
   };
 
   useEffect(() => {
-    loadData();
+    fetchDashboardData();
   }, []);
 
-  // ---------------------------------------------
-  // Job form
-  // ---------------------------------------------
+  // ==================================================
+  // JOB FORM CHANGE
+  // ==================================================
 
-  const handleChange = (e) => {
-    setForm({
-      ...form,
+  const handleJobChange = (e) => {
+    setJobForm({
+      ...jobForm,
       [e.target.name]: e.target.value,
     });
   };
 
-  const resetForm = () => {
-    setForm({
-      title: "",
-      company: "",
-      location: "",
-      salary: "",
-      skills: "",
-    });
+  // ==================================================
+  // ADD JOB
+  // ==================================================
 
-    setEditingJobId(null);
-  };
-
-  // ---------------------------------------------
-  // Add / Update Job
-  // ---------------------------------------------
-
-  const handleSubmit = async (e) => {
+  const handleAddJob = async (e) => {
     e.preventDefault();
 
-    setSaving(true);
+    setJobLoading(true);
+    setMessage("");
 
     try {
-      const url = editingJobId
-        ? `/api/admin/jobs/${editingJobId}/`
-        : "/api/admin/jobs/";
-
-      const method = editingJobId
-        ? "PUT"
-        : "POST";
-
       const response = await apiFetch(
-        url,
+        "/api/admin/jobs/",
         {
-          method,
+          method: "POST",
+
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type":
+              "application/json",
           },
-          body: JSON.stringify(form),
+
+          body: JSON.stringify({
+            title: jobForm.title,
+            company: jobForm.company,
+            location: jobForm.location,
+            salary: jobForm.salary,
+            skills: jobForm.skills,
+          }),
         }
       );
 
       const data = await response.json();
 
       if (!response.ok) {
+        console.error(
+          "Add job error:",
+          data
+        );
+
         alert(
           data.error ||
-            data.detail ||
-            "Could not save job."
+            "Could not add job."
         );
+
         return;
       }
 
-      alert(
-        editingJobId
-          ? "Job updated successfully! ✅"
-          : "Job created successfully! 🎉"
+      setMessage(
+        "Job added successfully! 🎉"
       );
 
-      resetForm();
+      setJobForm({
+        title: "",
+        company: "",
+        location: "",
+        salary: "",
+        skills: "",
+      });
 
-      await loadData();
+      await fetchDashboardData();
     } catch (error) {
-      console.error(error);
+      console.error(
+        "Add job error:",
+        error
+      );
 
       alert(
         "Could not connect to Django."
       );
     } finally {
-      setSaving(false);
+      setJobLoading(false);
     }
   };
 
-  // ---------------------------------------------
-  // Edit Job
-  // ---------------------------------------------
+  // ==================================================
+  // DELETE JOB
+  // ==================================================
 
-  const handleEdit = (job) => {
-    setEditingJobId(job.id);
-
-    setForm({
-      title: job.title,
-      company: job.company,
-      location: job.location,
-      salary: job.salary,
-      skills: job.skills,
-    });
-
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
-  };
-
-  // ---------------------------------------------
-  // Delete Job
-  // ---------------------------------------------
-
-  const handleDelete = async (jobId) => {
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this job?"
-    );
+  const handleDeleteJob = async (
+    jobId
+  ) => {
+    const confirmed =
+      window.confirm(
+        "Are you sure you want to delete this job?"
+      );
 
     if (!confirmed) {
       return;
@@ -220,21 +213,29 @@ function AdminDashboard() {
       const data = await response.json();
 
       if (!response.ok) {
+        console.error(
+          "Delete job error:",
+          data
+        );
+
         alert(
           data.error ||
-            data.detail ||
             "Could not delete job."
         );
+
         return;
       }
 
-      alert(
+      setMessage(
         "Job deleted successfully."
       );
 
-      await loadData();
+      await fetchDashboardData();
     } catch (error) {
-      console.error(error);
+      console.error(
+        "Delete job error:",
+        error
+      );
 
       alert(
         "Could not connect to Django."
@@ -242,28 +243,29 @@ function AdminDashboard() {
     }
   };
 
-  // ---------------------------------------------
-  // Update Application Status
-  // ---------------------------------------------
+  // ==================================================
+  // UPDATE APPLICATION STATUS
+  // ==================================================
 
-  const updateApplicationStatus = async (
+  const handleStatusChange = async (
     applicationId,
-    status
+    newStatus
   ) => {
-    setUpdatingApplicationId(
-      applicationId
-    );
+    setApplicationLoading(true);
 
     try {
       const response = await apiFetch(
         `/api/admin/applications/${applicationId}/status/`,
         {
           method: "PATCH",
+
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type":
+              "application/json",
           },
+
           body: JSON.stringify({
-            status,
+            status: newStatus,
           }),
         }
       );
@@ -271,53 +273,77 @@ function AdminDashboard() {
       const data = await response.json();
 
       if (!response.ok) {
+        console.error(
+          "Status update error:",
+          data
+        );
+
         alert(
           data.error ||
-            data.detail ||
-            "Could not update application status."
+            "Could not update status."
         );
 
         return;
       }
 
-      setApplications((current) =>
-        current.map((application) =>
-          application.id === applicationId
-            ? {
-                ...application,
-                status: data.status,
-              }
-            : application
-        )
+      setMessage(
+        "Application status updated successfully."
       );
 
-      // Refresh statistics too
-      const statsResponse = await apiFetch(
-        "/api/admin/dashboard/"
-      );
-
-      const statsData =
-        await statsResponse.json();
-
-      if (statsResponse.ok) {
-        setStats(statsData);
-      }
+      await fetchDashboardData();
     } catch (error) {
-      console.error(error);
+      console.error(
+        "Status update error:",
+        error
+      );
 
       alert(
         "Could not connect to Django."
       );
     } finally {
-      setUpdatingApplicationId(
-        null
-      );
+      setApplicationLoading(false);
     }
   };
 
+  // ==================================================
+  // LOGOUT
+  // ==================================================
+
+  const handleLogout = () => {
+    localStorage.removeItem(
+      "jobmateUser"
+    );
+
+    localStorage.removeItem(
+      "accessToken"
+    );
+
+    localStorage.removeItem(
+      "refreshToken"
+    );
+
+    localStorage.removeItem(
+      "jobmateProfile"
+    );
+
+    localStorage.removeItem(
+      "jobmateApplication"
+    );
+
+    localStorage.removeItem(
+      "jobmateIsAdmin"
+    );
+
+    window.location.href = "/";
+  };
+
+  // ==================================================
+  // LOADING
+  // ==================================================
+
   if (loading) {
     return (
-      <div className="admin-page">
+      <div className="dashboard-page">
         <h2>
           Loading admin dashboard...
         </h2>
@@ -325,213 +351,336 @@ function AdminDashboard() {
     );
   }
 
-  if (error) {
-    return (
-      <div className="admin-page">
-        <h2>{error}</h2>
-      </div>
-    );
-  }
+  // ==================================================
+  // UI
+  // ==================================================
 
   return (
-    <div className="admin-page">
+    <div className="dashboard-page">
 
-      {/* Header */}
-      <div className="admin-header">
+      {/* =========================================
+          NAVBAR
+      ========================================== */}
 
-        <p className="tagline">
-          JOBMATE ADMIN
-        </p>
+      <nav className="navbar">
 
-        <h1>
-          Admin Dashboard 📊
-        </h1>
+        <div className="logo">
+          CareerMate Admin
+        </div>
 
-        <p>
-          Manage jobs and monitor applications.
-        </p>
+        <div className="nav-links">
+          <a
+            href="#dashboard"
+            onClick={(e) => {
+              e.preventDefault();
 
-      </div>
+              window.scrollTo({
+                top: 0,
+                behavior: "smooth",
+              });
+            }}
+          >
+            Dashboard
+          </a>
 
-      {/* Statistics */}
-      {stats && (
-        <div className="admin-stats">
+          <a
+            href="#jobs"
+            onClick={(e) => {
+              e.preventDefault();
 
-          <div className="admin-stat-card">
-            <span>👥</span>
+              document
+                .getElementById("admin-jobs")
+                ?.scrollIntoView({
+                  behavior: "smooth",
+                });
+            }}
+          >
+            Jobs
+          </a>
+
+          <a
+            href="#applications"
+            onClick={(e) => {
+              e.preventDefault();
+
+              document
+                .getElementById(
+                  "admin-applications"
+                )
+                ?.scrollIntoView({
+                  behavior: "smooth",
+                });
+            }}
+          >
+            Applications
+          </a>
+        </div>
+
+        <button
+          className="login-btn"
+          onClick={handleLogout}
+        >
+          Logout
+        </button>
+
+      </nav>
+
+      {/* =========================================
+          MAIN CONTENT
+      ========================================== */}
+
+      <main className="dashboard-content">
+
+        {/* Header */}
+
+        <div className="welcome-section">
+
+          <p className="tagline">
+            CAREERMATE ADMIN
+          </p>
+
+          <h1>
+            Admin Dashboard 📊
+          </h1>
+
+          <p>
+            Manage jobs and monitor
+            applications.
+          </p>
+
+        </div>
+
+        {/* Success Message */}
+
+        {message && (
+          <div
+            className="eligibility-box"
+            style={{
+              marginBottom: "20px",
+            }}
+          >
+            ✅ {message}
+          </div>
+        )}
+
+        {/* =====================================
+            STAT CARDS
+        ====================================== */}
+
+        <div className="dashboard-cards">
+
+          {/* Users */}
+
+          <div className="dashboard-card">
+            <span className="card-icon">
+              👥
+            </span>
+
             <h2>
               {stats.total_users}
             </h2>
+
             <p>
               Total Users
             </p>
           </div>
 
-          <div className="admin-stat-card">
-            <span>💼</span>
+          {/* Jobs */}
+
+          <div className="dashboard-card">
+            <span className="card-icon">
+              💼
+            </span>
+
             <h2>
               {stats.total_jobs}
             </h2>
+
             <p>
               Total Jobs
             </p>
           </div>
 
-          <div className="admin-stat-card">
-            <span>📋</span>
+          {/* Applications */}
+
+          <div className="dashboard-card">
+            <span className="card-icon">
+              📋
+            </span>
+
             <h2>
               {stats.total_applications}
             </h2>
+
             <p>
               Applications
             </p>
           </div>
 
-          <div className="admin-stat-card">
-            <span>🎤</span>
+          {/* Interviews */}
+
+          <div className="dashboard-card">
+            <span className="card-icon">
+              🎤
+            </span>
+
             <h2>
               {stats.interview}
             </h2>
+
             <p>
               Interviews
             </p>
           </div>
 
-          <div className="admin-stat-card">
-            <span>✅</span>
+          {/* Selected */}
+
+          <div className="dashboard-card">
+            <span className="card-icon">
+              ✅
+            </span>
+
             <h2>
               {stats.selected}
             </h2>
+
             <p>
               Selected
             </p>
           </div>
 
-          <div className="admin-stat-card">
-            <span>❌</span>
+          {/* Rejected */}
+
+          <div className="dashboard-card">
+            <span className="card-icon">
+              ❌
+            </span>
+
             <h2>
               {stats.rejected}
             </h2>
+
             <p>
               Rejected
             </p>
           </div>
 
         </div>
-      )}
 
-      {/* Add / Edit Job */}
-      <div className="admin-job-form">
+        {/* =====================================
+            ADD NEW JOB
+        ====================================== */}
 
-        <h2>
-          {editingJobId
-            ? "Edit Job ✏️"
-            : "Add New Job ➕"}
-        </h2>
+        <section
+          className="profile-summary"
+          id="admin-jobs"
+        >
 
-        <form onSubmit={handleSubmit}>
+          <h2>
+            Add New Job ➕
+          </h2>
 
-          <input
-            type="text"
-            name="title"
-            placeholder="Job Title"
-            value={form.title}
-            onChange={handleChange}
-            required
-          />
+          <form
+            onSubmit={handleAddJob}
+          >
 
-          <input
-            type="text"
-            name="company"
-            placeholder="Company Name"
-            value={form.company}
-            onChange={handleChange}
-            required
-          />
+            <input
+              type="text"
+              name="title"
+              placeholder="Job Title"
+              value={jobForm.title}
+              onChange={handleJobChange}
+              required
+            />
 
-          <input
-            type="text"
-            name="location"
-            placeholder="Location"
-            value={form.location}
-            onChange={handleChange}
-            required
-          />
+            <input
+              type="text"
+              name="company"
+              placeholder="Company"
+              value={jobForm.company}
+              onChange={handleJobChange}
+              required
+            />
 
-          <input
-            type="text"
-            name="salary"
-            placeholder="Salary"
-            value={form.salary}
-            onChange={handleChange}
-            required
-          />
+            <input
+              type="text"
+              name="location"
+              placeholder="Location"
+              value={jobForm.location}
+              onChange={handleJobChange}
+              required
+            />
 
-          <input
-            type="text"
-            name="skills"
-            placeholder="Skills (Python, Django, SQL)"
-            value={form.skills}
-            onChange={handleChange}
-            required
-          />
+            <input
+              type="text"
+              name="salary"
+              placeholder="Salary"
+              value={jobForm.salary}
+              onChange={handleJobChange}
+              required
+            />
 
-          <div className="admin-form-buttons">
+            <input
+              type="text"
+              name="skills"
+              placeholder="Skills (Python, Django, SQL)"
+              value={jobForm.skills}
+              onChange={handleJobChange}
+              required
+            />
 
             <button
               type="submit"
-              disabled={saving}
+              className="primary-btn"
+              disabled={jobLoading}
             >
-              {saving
-                ? "Saving..."
-                : editingJobId
-                ? "Update Job"
+              {jobLoading
+                ? "Adding Job..."
                 : "Add Job"}
             </button>
 
-            {editingJobId && (
-              <button
-                type="button"
-                onClick={resetForm}
-              >
-                Cancel
-              </button>
-            )}
+          </form>
 
-          </div>
+        </section>
 
-        </form>
+        {/* =====================================
+            JOB LIST
+        ====================================== */}
 
-      </div>
+        <section className="profile-summary">
 
-      {/* Manage Jobs */}
-      <div className="admin-jobs-section">
+          <h2>
+            Manage Jobs 💼
+          </h2>
 
-        <h2>
-          Manage Jobs 💼
-        </h2>
+          {jobs.length === 0 ? (
+            <p>
+              No jobs available.
+            </p>
+          ) : (
+            <div className="jobs-container">
 
-        {jobs.length === 0 ? (
-          <p>
-            No jobs available.
-          </p>
-        ) : (
-          <div className="admin-jobs-list">
+              {jobs.map((job) => (
+                <div
+                  className="job-card"
+                  key={job.id}
+                >
 
-            {jobs.map((job) => (
-              <div
-                className="admin-job-card"
-                key={job.id}
-              >
+                  <div className="job-top">
 
-                <div>
-                  <h3>
-                    {job.title}
-                  </h3>
+                    <div>
 
-                  <p>
-                    {job.company}
-                  </p>
+                      <h2>
+                        {job.title}
+                      </h2>
+
+                      <h3>
+                        {job.company}
+                      </h3>
+
+                    </div>
+
+                  </div>
 
                   <p>
                     📍 {job.location}
@@ -544,137 +693,149 @@ function AdminDashboard() {
                   <p>
                     💻 {job.skills}
                   </p>
-                </div>
-
-                <div className="admin-job-actions">
 
                   <button
+                    className="login-btn"
                     onClick={() =>
-                      handleEdit(job)
+                      handleDeleteJob(
+                        job.id
+                      )
                     }
                   >
-                    ✏️ Edit
-                  </button>
-
-                  <button
-                    className="delete-btn"
-                    onClick={() =>
-                      handleDelete(job.id)
-                    }
-                  >
-                    🗑️ Delete
+                    🗑️ Delete Job
                   </button>
 
                 </div>
+              ))}
 
-              </div>
-            ))}
+            </div>
+          )}
 
-          </div>
-        )}
+        </section>
 
-      </div>
+        {/* =====================================
+            APPLICATIONS
+        ====================================== */}
 
-      {/* Manage Applications */}
-      <div className="admin-applications-section">
+        <section
+          className="profile-summary"
+          id="admin-applications"
+        >
 
-        <h2>
-          Manage Applications 📋
-        </h2>
+          <h2>
+            All Applications 📋
+          </h2>
 
-        {applications.length === 0 ? (
-          <p>
-            No applications available.
-          </p>
-        ) : (
-          <div className="admin-applications-list">
+          {applications.length === 0 ? (
+            <p>
+              No applications yet.
+            </p>
+          ) : (
+            <div className="jobs-container">
 
-            {applications.map(
-              (application) => (
-                <div
-                  className="admin-application-card"
-                  key={application.id}
-                >
+              {applications.map(
+                (application) => (
+                  <div
+                    className="job-card"
+                    key={application.id}
+                  >
 
-                  <div>
+                    <h2>
+                      {application.job_title}
+                    </h2>
+
                     <h3>
-                      {application.name}
+                      {application.company}
                     </h3>
 
                     <p>
-                      👤 {application.username}
+                      👤{" "}
+                      {application.name}
                     </p>
 
                     <p>
-                      💼 {application.job_title}
+                      🧑‍💻{" "}
+                      {application.username}
                     </p>
 
                     <p>
-                      🏢 {application.company}
-                    </p>
-
-                    <p>
-                      📍 {application.location}
+                      📍{" "}
+                      {application.location}
                     </p>
 
                     <p>
                       📅{" "}
-                      {new Date(
-                        application.applied_at
-                      ).toLocaleDateString()}
+                      {application.applied_at
+                        ? new Date(
+                            application.applied_at
+                          ).toLocaleString()
+                        : "N/A"}
                     </p>
-                  </div>
 
-                  <div className="admin-application-actions">
-
-                    <span className="admin-status-label">
-                      Status
-                    </span>
-
-                    <select
-                      value={application.status}
-                      disabled={
-                        updatingApplicationId ===
-                        application.id
-                      }
-                      onChange={(e) =>
-                        updateApplicationStatus(
-                          application.id,
-                          e.target.value
-                        )
-                      }
+                    <div
+                      style={{
+                        marginTop:
+                          "15px",
+                      }}
                     >
-                      <option value="Applied">
-                        Applied
-                      </option>
 
-                      <option value="Shortlisted">
-                        Shortlisted
-                      </option>
+                      <label>
+                        Status:
+                      </label>
 
-                      <option value="Interview">
-                        Interview
-                      </option>
+                      <select
+                        value={
+                          application.status
+                        }
+                        disabled={
+                          applicationLoading
+                        }
+                        onChange={(e) =>
+                          handleStatusChange(
+                            application.id,
+                            e.target.value
+                          )
+                        }
+                        style={{
+                          marginLeft:
+                            "10px",
+                        }}
+                      >
 
-                      <option value="Selected">
-                        Selected
-                      </option>
+                        <option value="Applied">
+                          Applied
+                        </option>
 
-                      <option value="Rejected">
-                        Rejected
-                      </option>
-                    </select>
+                        <option value="Shortlisted">
+                          Shortlisted
+                        </option>
+
+                        <option value="Interview">
+                          Interview
+                        </option>
+
+                        <option value="Selected">
+                          Selected
+                        </option>
+
+                        <option value="Rejected">
+                          Rejected
+                        </option>
+
+                      </select>
+
+                    </div>
 
                   </div>
+                )
+              )}
 
-                </div>
-              )
-            )}
+            </div>
+          )}
 
-          </div>
-        )}
+        </section>
 
-      </div>
+      </main>
 
     </div>
   );
