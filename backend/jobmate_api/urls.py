@@ -19,8 +19,6 @@ from core.views import (
     admin_job_detail,
     admin_applications,
     admin_update_application_status,
-    setup_admin,
-    reset_admin_password,
 )
 
 
@@ -165,27 +163,5 @@ urlpatterns = [
     path(
         "api/admin/applications/<int:application_id>/status/",
         admin_update_application_status,
-    ),
-
-
-    # ==================================================
-    # TEMPORARY ADMIN SETUP
-    # REMOVE AFTER ADMIN ACCOUNT IS READY
-    # ==================================================
-
-    path(
-        "api/setup-admin/",
-        setup_admin,
-    ),
-
-
-    # ==================================================
-    # TEMPORARY ADMIN PASSWORD RESET
-    # REMOVE AFTER PASSWORD IS RESET
-    # ==================================================
-
-    path(
-        "api/reset-admin-password/",
-        reset_admin_password,
     ),
 ]
