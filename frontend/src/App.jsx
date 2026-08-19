@@ -13,19 +13,40 @@ import AdminDashboard from "./AdminDashboard";
 import "./App.css";
 
 function App() {
-  const [page, setPage] = useState(
-    localStorage.getItem("jobmateUser")
-      ? "dashboard"
-      : "home"
-  );
+  // =========================================
+  // INITIAL PAGE
+  // =========================================
+
+  const [page, setPage] = useState(() => {
+    const loggedIn =
+      localStorage.getItem("jobmateUser");
+
+    const isAdmin =
+      localStorage.getItem("jobmateIsAdmin") ===
+      "true";
+
+    if (!loggedIn) {
+      return "home";
+    }
+
+    if (isAdmin) {
+      return "admin-dashboard";
+    }
+
+    return "dashboard";
+  });
+
 
   // =========================================
   // ADMIN DASHBOARD
   // =========================================
 
   if (page === "admin-dashboard") {
-    return <AdminDashboard />;
+    return (
+      <AdminDashboard />
+    );
   }
+
 
   // =========================================
   // USER DASHBOARD
@@ -39,17 +60,36 @@ function App() {
         }
 
         onLogout={() => {
-          localStorage.removeItem("jobmateUser");
-          localStorage.removeItem("accessToken");
-          localStorage.removeItem("refreshToken");
-          localStorage.removeItem("jobmateProfile");
-          localStorage.removeItem("jobmateApplication");
+          localStorage.removeItem(
+            "jobmateUser"
+          );
+
+          localStorage.removeItem(
+            "accessToken"
+          );
+
+          localStorage.removeItem(
+            "refreshToken"
+          );
+
+          localStorage.removeItem(
+            "jobmateProfile"
+          );
+
+          localStorage.removeItem(
+            "jobmateApplication"
+          );
+
+          localStorage.removeItem(
+            "jobmateIsAdmin"
+          );
 
           setPage("home");
         }}
       />
     );
   }
+
 
   // =========================================
   // INTERVIEW PREP
@@ -58,10 +98,13 @@ function App() {
   if (page === "interview") {
     return (
       <InterviewPrep
-        onBack={() => setPage("home")}
+        onBack={() =>
+          setPage("home")
+        }
       />
     );
   }
+
 
   // =========================================
   // SKILL ROADMAP
@@ -70,26 +113,35 @@ function App() {
   if (page === "roadmap") {
     return (
       <SkillRoadmap
-        onBack={() => setPage("home")}
+        onBack={() =>
+          setPage("home")
+        }
       />
     );
   }
+
 
   // =========================================
   // APPLICATIONS
   // =========================================
 
   if (page === "applications") {
-    return <Applications />;
+    return (
+      <Applications />
+    );
   }
+
 
   // =========================================
   // JOBS
   // =========================================
 
   if (page === "jobs") {
-    return <Jobs />;
+    return (
+      <Jobs />
+    );
   }
+
 
   // =========================================
   // PROFILE
@@ -98,10 +150,13 @@ function App() {
   if (page === "profile") {
     return (
       <Profile
-        onComplete={() => setPage("dashboard")}
+        onComplete={() =>
+          setPage("dashboard")
+        }
       />
     );
   }
+
 
   // =========================================
   // LOGIN
@@ -110,11 +165,30 @@ function App() {
   if (page === "login") {
     return (
       <Login
-        onSignup={() => setPage("signup")}
-        onLogin={() => setPage("dashboard")}
+        onSignup={() =>
+          setPage("signup")
+        }
+
+        onLogin={() => {
+          const isAdmin =
+            localStorage.getItem(
+              "jobmateIsAdmin"
+            ) === "true";
+
+          if (isAdmin) {
+            setPage(
+              "admin-dashboard"
+            );
+          } else {
+            setPage(
+              "dashboard"
+            );
+          }
+        }}
       />
     );
   }
+
 
   // =========================================
   // SIGNUP
@@ -123,11 +197,17 @@ function App() {
   if (page === "signup") {
     return (
       <Signup
-        onBackToLogin={() => setPage("login")}
-        onProfile={() => setPage("profile")}
+        onBackToLogin={() =>
+          setPage("login")
+        }
+
+        onProfile={() =>
+          setPage("profile")
+        }
       />
     );
   }
+
 
   // =========================================
   // HOME PAGE
@@ -136,9 +216,9 @@ function App() {
   return (
     <div className="app">
 
-      {/* ================================
+      {/* =====================================
           NAVBAR
-      ================================= */}
+      ====================================== */}
 
       <nav className="navbar">
 
@@ -146,57 +226,76 @@ function App() {
           CareerMate
         </div>
 
+
         <div className="nav-links">
 
           <a
             href="#"
-            onClick={() => setPage("home")}
+            onClick={() =>
+              setPage("home")
+            }
           >
             Home
           </a>
 
+
           <a
             href="#"
-            onClick={() => setPage("jobs")}
+            onClick={() =>
+              setPage("jobs")
+            }
           >
             Find Jobs
           </a>
 
+
           <a
             href="#"
-            onClick={() => setPage("roadmap")}
+            onClick={() =>
+              setPage("roadmap")
+            }
           >
             Skill Roadmap
           </a>
 
+
           <a
             href="#"
-            onClick={() => setPage("interview")}
+            onClick={() =>
+              setPage("interview")
+            }
           >
             Interview Prep
           </a>
 
+
           <a
             href="#"
-            onClick={() => setPage("applications")}
+            onClick={() =>
+              setPage("applications")
+            }
           >
             My Applications
           </a>
 
         </div>
 
+
         <button
           className="login-btn"
-          onClick={() => setPage("login")}
+          onClick={() =>
+            setPage("login")
+          }
         >
           Login
         </button>
 
       </nav>
 
-      {/* ================================
+
+      {/* =====================================
           HERO
-      ================================= */}
+      ====================================== */}
 
       <main className="hero">
 
@@ -206,11 +305,13 @@ function App() {
             YOUR CAREER PARTNER
           </p>
 
+
           <h1>
             Find the right job.
             <br />
             Build your future.
           </h1>
+
 
           <p className="description">
             CareerMate helps you find jobs that
@@ -218,18 +319,24 @@ function App() {
             need to learn, and prepare for interviews.
           </p>
 
+
           <div className="buttons">
 
             <button
               className="primary-btn"
-              onClick={() => setPage("jobs")}
+              onClick={() =>
+                setPage("jobs")
+              }
             >
               Find Jobs
             </button>
 
+
             <button
               className="secondary-btn"
-              onClick={() => setPage("signup")}
+              onClick={() =>
+                setPage("signup")
+              }
             >
               Create Profile
             </button>
@@ -240,17 +347,22 @@ function App() {
 
       </main>
 
-      {/* ================================
+
+      {/* =====================================
           FEATURES
-      ================================= */}
+      ====================================== */}
 
       <section className="features">
+
 
         {/* Find Jobs */}
         <div
           className="feature-card"
-          onClick={() => setPage("jobs")}
+          onClick={() =>
+            setPage("jobs")
+          }
         >
+
           <h3>
             🔎 Find Jobs
           </h3>
@@ -259,13 +371,18 @@ function App() {
             Discover jobs that match your
             education and skills.
           </p>
+
         </div>
+
 
         {/* Skill Roadmap */}
         <div
           className="feature-card"
-          onClick={() => setPage("roadmap")}
+          onClick={() =>
+            setPage("roadmap")
+          }
         >
+
           <h3>
             🎯 Skill Roadmap
           </h3>
@@ -274,13 +391,18 @@ function App() {
             Know exactly what skills you need
             for your dream job.
           </p>
+
         </div>
+
 
         {/* Interview Prep */}
         <div
           className="feature-card"
-          onClick={() => setPage("interview")}
+          onClick={() =>
+            setPage("interview")
+          }
         >
+
           <h3>
             🎤 Interview Prep
           </h3>
@@ -289,6 +411,7 @@ function App() {
             Practice HR and technical
             interview questions.
           </p>
+
         </div>
 
       </section>
