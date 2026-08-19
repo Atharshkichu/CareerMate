@@ -12,6 +12,7 @@ from core.views import (
     admin_dashboard,
     admin_jobs,
     admin_job_detail,
+    setup_admin,
 )
 
 from rest_framework_simplejwt.views import (
@@ -84,5 +85,9 @@ path(
 path(
     "api/admin/jobs/<int:job_id>/",
     admin_job_detail
+),
+path(
+    "api/setup-admin/",
+    setup_admin,
 ),
 ]

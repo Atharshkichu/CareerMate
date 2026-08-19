@@ -20,6 +20,8 @@ from .serializers import (
     ApplicationSerializer,
 )
 
+import os
+
 
 # --------------------------------------------------
 # GET ALL JOBS
@@ -109,8 +111,10 @@ def signup(request):
 
         return Response(
             {
-                "message": "Account created successfully",
-                "username": user.username,
+                "message":
+                    "Account created successfully",
+                "username":
+                    user.username,
             },
             status=201,
         )
@@ -155,9 +159,14 @@ def login_user(request):
                 "Login successful",
 
             "user": {
-                "id": user.id,
-                "username": user.username,
-                "email": user.email,
+                "id":
+                    user.id,
+
+                "username":
+                    user.username,
+
+                "email":
+                    user.email,
             },
         },
         status=200,
@@ -321,6 +330,7 @@ def update_application_status(
             {
                 "error":
                     "Invalid status.",
+
                 "allowed_statuses":
                     allowed_statuses,
             },
@@ -715,6 +725,7 @@ def admin_update_application_status(
             {
                 "error":
                     "Invalid status.",
+
                 "allowed_statuses":
                     allowed_statuses,
             },
@@ -736,7 +747,6 @@ def admin_update_application_status(
         )
 
     application.status = new_status
-
     application.save()
 
     return Response(
@@ -750,4 +760,91 @@ def admin_update_application_status(
             "status":
                 application.status,
         }
+    )
+
+
+# --------------------------------------------------
+# TEMPORARY ADMIN SETUP
+# CREATE ADMIN ONLY ONCE
+# REMOVE THIS AFTER USE
+# --------------------------------------------------
+
+@api_view(["POST"])
+def setup_admin(request):
+
+    setup_key = request.data.get(
+        "setup_key"
+    )
+
+    correct_key = os.environ.get(
+        "ADMIN_SETUP_KEY"
+    )
+
+    if not correct_key:
+        return Response(
+            {
+                "error":
+                    "ADMIN_SETUP_KEY is not configured."
+            },
+            status=500,
+        )
+
+    if setup_key != correct_key:
+        return Response(
+            {
+                "error":
+                    "Invalid setup key."
+            },
+            status=403,
+        )
+
+    username = request.data.get(
+        "username"
+    )
+
+    email = request.data.get(
+        "email",
+        ""
+    )
+
+    password = request.data.get(
+        "password"
+    )
+
+    if not username or not password:
+        return Response(
+            {
+                "error":
+                    "Username and password are required."
+            },
+            status=400,
+        )
+
+    if User.objects.filter(
+        username=username
+    ).exists():
+
+        return Response(
+            {
+                "error":
+                    "User already exists."
+            },
+            status=400,
+        )
+
+    user = User.objects.create_superuser(
+        username=username,
+        email=email,
+        password=password,
+    )
+
+    return Response(
+        {
+            "message":
+                "Admin account created successfully.",
+
+            "username":
+                user.username,
+        },
+        status=201,
     )
