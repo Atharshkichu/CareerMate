@@ -22,6 +22,10 @@ function Login({ onSignup, onLogin }) {
     setLoading(true);
 
     try {
+      // ------------------------------------------
+      // Get JWT tokens
+      // ------------------------------------------
+
       const response = await apiFetch(
         "/api/token/",
         {
@@ -41,11 +45,6 @@ function Login({ onSignup, onLogin }) {
       const data = await response.json();
 
       if (!response.ok) {
-        console.error(
-          "Login error:",
-          data
-        );
-
         alert(
           data.detail ||
             "Invalid username or password."
@@ -54,7 +53,10 @@ function Login({ onSignup, onLogin }) {
         return;
       }
 
-      // Save JWT tokens
+      // ------------------------------------------
+      // Save tokens
+      // ------------------------------------------
+
       localStorage.setItem(
         "accessToken",
         data.access
@@ -65,13 +67,31 @@ function Login({ onSignup, onLogin }) {
         data.refresh
       );
 
-      // Save current user info
       localStorage.setItem(
         "jobmateUser",
         JSON.stringify({
           username: form.username,
         })
       );
+
+      // ------------------------------------------
+      // Check admin access
+      // ------------------------------------------
+
+      const adminResponse = await apiFetch(
+        "/api/admin/dashboard/"
+      );
+
+      if (adminResponse.ok) {
+        localStorage.setItem(
+          "jobmateIsAdmin",
+          "true"
+        );
+      } else {
+        localStorage.removeItem(
+          "jobmateIsAdmin"
+        );
+      }
 
       alert(
         "Login successful! 🎉"
@@ -81,7 +101,7 @@ function Login({ onSignup, onLogin }) {
 
     } catch (error) {
       console.error(
-        "Login connection error:",
+        "Login error:",
         error
       );
 
