@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { apiFetch } from "./api";
 
 function Signup({ onBackToLogin, onProfile }) {
   const [form, setForm] = useState({
@@ -10,6 +11,10 @@ function Signup({ onBackToLogin, onProfile }) {
 
   const [loading, setLoading] = useState(false);
 
+  // ---------------------------------------------
+  // Handle input changes
+  // ---------------------------------------------
+
   const handleChange = (e) => {
     setForm({
       ...form,
@@ -17,24 +22,41 @@ function Signup({ onBackToLogin, onProfile }) {
     });
   };
 
+  // ---------------------------------------------
+  // Submit signup form
+  // ---------------------------------------------
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (form.password !== form.confirmPassword) {
-      alert("Passwords do not match.");
+    // Check password match
+    if (
+      form.password !==
+      form.confirmPassword
+    ) {
+      alert(
+        "Passwords do not match."
+      );
+
       return;
     }
 
     setLoading(true);
 
     try {
-      const response = await fetch(
-        "http://127.0.0.1:8000/api/signup/",
+      // -----------------------------------------
+      // Send signup request to Django
+      // -----------------------------------------
+
+      const response = await apiFetch(
+        "/api/signup/",
         {
           method: "POST",
+
           headers: {
             "Content-Type": "application/json",
           },
+
           body: JSON.stringify({
             username: form.username,
             email: form.email,
@@ -43,33 +65,74 @@ function Signup({ onBackToLogin, onProfile }) {
         }
       );
 
-      const data = await response.json();
+      const data =
+        await response.json();
+
+      // -----------------------------------------
+      // Handle backend errors
+      // -----------------------------------------
 
       if (!response.ok) {
-        console.error(data);
+        console.error(
+          "Signup error:",
+          data
+        );
 
         if (data.username) {
-          alert(data.username[0]);
+          alert(
+            data.username[0]
+          );
         } else if (data.email) {
-          alert(data.email[0]);
+          alert(
+            data.email[0]
+          );
         } else if (data.password) {
-          alert(data.password[0]);
+          alert(
+            data.password[0]
+          );
+        } else if (data.detail) {
+          alert(
+            data.detail
+          );
+        } else if (data.error) {
+          alert(
+            data.error
+          );
         } else {
-          alert("Could not create account.");
+          alert(
+            "Could not create account."
+          );
         }
 
         return;
       }
 
-      alert("Account created successfully! 🎉");
+      // -----------------------------------------
+      // Signup successful
+      // -----------------------------------------
 
-      onProfile();
-    } catch (error) {
-      console.error(error);
+      console.log(
+        "Signup successful:",
+        data
+      );
 
       alert(
-        "Could not connect to Django. Make sure the backend server is running."
+        "Account created successfully! 🎉"
       );
+
+      // Go to profile page
+      onProfile();
+
+    } catch (error) {
+      console.error(
+        "Signup connection error:",
+        error
+      );
+
+      alert(
+        "Could not connect to Django. Please try again."
+      );
+
     } finally {
       setLoading(false);
     }
@@ -77,16 +140,23 @@ function Signup({ onBackToLogin, onProfile }) {
 
   return (
     <div className="login-page">
+
       <div className="login-box">
 
-        <h1>Create Account 🚀</h1>
+        <h1>
+          Create Account 🚀
+        </h1>
 
         <p>
-          Join JobMate and find your right career.
+          Join CareerMate and find
+          your right career.
         </p>
 
-        <form onSubmit={handleSubmit}>
+        <form
+          onSubmit={handleSubmit}
+        >
 
+          {/* Username */}
           <input
             type="text"
             name="username"
@@ -96,6 +166,7 @@ function Signup({ onBackToLogin, onProfile }) {
             required
           />
 
+          {/* Email */}
           <input
             type="email"
             name="email"
@@ -105,6 +176,7 @@ function Signup({ onBackToLogin, onProfile }) {
             required
           />
 
+          {/* Password */}
           <input
             type="password"
             name="password"
@@ -114,6 +186,7 @@ function Signup({ onBackToLogin, onProfile }) {
             required
           />
 
+          {/* Confirm Password */}
           <input
             type="password"
             name="confirmPassword"
@@ -123,6 +196,7 @@ function Signup({ onBackToLogin, onProfile }) {
             required
           />
 
+          {/* Submit */}
           <button
             type="submit"
             className="primary-btn"
@@ -137,12 +211,16 @@ function Signup({ onBackToLogin, onProfile }) {
 
         <p className="signup-text">
           Already have an account?{" "}
-          <span onClick={onBackToLogin}>
+
+          <span
+            onClick={onBackToLogin}
+          >
             Login
           </span>
         </p>
 
       </div>
+
     </div>
   );
 }
