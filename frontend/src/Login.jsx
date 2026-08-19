@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { apiFetch } from "./api";
 
 function Login({ onSignup, onLogin }) {
   const [form, setForm] = useState({
@@ -21,13 +22,15 @@ function Login({ onSignup, onLogin }) {
     setLoading(true);
 
     try {
-      const response = await fetch(
-        "http://127.0.0.1:8000/api/token/",
+      const response = await apiFetch(
+        "/api/token/",
         {
           method: "POST",
+
           headers: {
             "Content-Type": "application/json",
           },
+
           body: JSON.stringify({
             username: form.username,
             password: form.password,
@@ -38,10 +41,14 @@ function Login({ onSignup, onLogin }) {
       const data = await response.json();
 
       if (!response.ok) {
-        console.error("Login error:", data);
+        console.error(
+          "Login error:",
+          data
+        );
 
         alert(
-          "Invalid username or password."
+          data.detail ||
+            "Invalid username or password."
         );
 
         return;
@@ -58,7 +65,7 @@ function Login({ onSignup, onLogin }) {
         data.refresh
       );
 
-      // Save user information
+      // Save current user info
       localStorage.setItem(
         "jobmateUser",
         JSON.stringify({
@@ -66,15 +73,20 @@ function Login({ onSignup, onLogin }) {
         })
       );
 
-      alert("Login successful! 🎉");
+      alert(
+        "Login successful! 🎉"
+      );
 
       onLogin();
 
     } catch (error) {
-      console.error(error);
+      console.error(
+        "Login connection error:",
+        error
+      );
 
       alert(
-        "Could not connect to Django. Make sure the backend server is running."
+        "Could not connect to Django."
       );
     } finally {
       setLoading(false);
@@ -91,7 +103,7 @@ function Login({ onSignup, onLogin }) {
         </h1>
 
         <p>
-          Login to continue with JobMate
+          Login to continue with CareerMate
         </p>
 
         <form onSubmit={handleSubmit}>
@@ -116,6 +128,7 @@ function Login({ onSignup, onLogin }) {
 
           <button
             type="submit"
+            className="primary-btn"
             disabled={loading}
           >
             {loading
