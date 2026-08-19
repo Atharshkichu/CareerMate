@@ -732,3 +732,19 @@ h1 {
     grid-template-columns: 1fr;
   }
 }
+
+.edit-profile-btn {
+  background: #2563eb;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 15px;
+}
+
+.edit-profile-btn:hover {
+  opacity: 0.9;
+}
